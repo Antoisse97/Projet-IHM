@@ -89,3 +89,31 @@ canvas {
     cursor: pointer;
 }
 
+/** Ajout 
+/* Bouton outil actif */
+#tools button.tool-active {
+    background-color: #4a90d9;
+    border-color: #2c6fad;
+    color: #fff;
+    font-weight: bold;
+}
+
+/* Pastilles couleurs récentes */
+.color-swatch {
+    width: 28px;
+    height: 28px;
+    border-radius: 4px;
+    border: 2px solid #888;
+    cursor: pointer;
+    transition: transform 0.1s, border-color 0.1s;
+}
+
+.color-swatch:hover {
+    transform: scale(1.2);
+    border-color: #333;
+}
+
+canvas {
+    cursor: crosshair;
+}
+/** Fin Ajout

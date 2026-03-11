@@ -88,6 +88,23 @@ function handleClick(event) {
 let isDrawing = false;
 
 /**
+ * Ajout Haithem
+ */
+
+// Palette couleurs récentes
+const MAX_RECENT = 6;
+let recentColors = [];
+
+// Case actuellement survolée pour le preview
+let hoveredCell = null;
+let savedCellData = null;
+
+/**
+ * Fin Ajout
+ */
+
+
+/**
  * Fonction qui gère le tracé continu
  * Elle convertit les pixels du canvas en coordonnées de grille et colorie la case.
  */
@@ -102,25 +119,125 @@ function handleDrag(x, y) {
     }
 }
 
+/** 
+ * Ajout 2 - Haithem
+ */
+
+function showPreview(x, y) {
+    if (isDrawing) return;
+    if (x < 0 || x >= cols || y < 0 || y >= rows) return;
+
+    const coords = toPixelCoordinate(x, y);
+    savedCellData = {
+        x, y,
+        imageData: ctx.getImageData(coords.x + 1, coords.y + 1, squareSize - 2, squareSize - 2)
+    };
+
+    ctx.save();
+    ctx.globalAlpha = 0.45;
+    ctx.fillStyle = currentTool === "eraser" ? "#ffffff" : currentColor;
+    ctx.fillRect(coords.x + 1, coords.y + 1, squareSize - 2, squareSize - 2);
+    ctx.restore();
+}
+
+function hidePreview() {
+    if (!savedCellData) return;
+    const coords = toPixelCoordinate(savedCellData.x, savedCellData.y);
+    ctx.putImageData(savedCellData.imageData, coords.x + 1, coords.y + 1);
+    savedCellData = null;
+}
+function addToRecentColors(color) {
+    recentColors = recentColors.filter(c => c !== color);
+    recentColors.unshift(color);
+    if (recentColors.length > MAX_RECENT) recentColors = recentColors.slice(0, MAX_RECENT);
+    renderRecentColors();
+}
+
+function renderRecentColors() {
+    const container = document.getElementById("recent-colors");
+    if (!container) return;
+    container.innerHTML = "";
+    recentColors.forEach(color => {
+        const swatch = document.createElement("div");
+        swatch.className = "color-swatch";
+        swatch.style.backgroundColor = color;
+        swatch.title = color;
+        swatch.addEventListener("click", () => {
+            currentColor = color;
+            currentTool = "brush";
+            const picker = document.getElementById("color-picker");
+            if (picker) picker.value = color;
+            setActiveToolButton("brush-btn");
+        });
+        container.appendChild(swatch);
+    });
+}
+
+function setActiveToolButton(activeId) {
+    ["brush-btn", "eraser-btn"].forEach(id => {
+        const btn = document.getElementById(id);
+        if (btn) btn.classList.toggle("tool-active", btn.id === activeId);
+    });
+}
+
+
+/**
+ * Fin Ajout 2
+ */
 // ÉCOUTEURS D'ÉVÉNEMENTS 
 
+
+/**
+ * Ajout 3
+ */
 // On commence à dessiner quand on appuie sur le bouton
-canvas.addEventListener("mousedown", () => { 
-    isDrawing = true; 
-});
-
-// On arrête de dessiner quand on relâche le bouton
-canvas.addEventListener("mouseup", () => { 
-    isDrawing = false; 
-});
-
-// On gère le mouvement de la souris
-canvas.addEventListener("mousemove", (event) => {
-    if (isDrawing) {
-        const canvasCoords = toCanvasCoordinate(event.clientX, event.clientY);
-        handleDrag(canvasCoords.x, canvasCoords.y);
+canvas.addEventListener("mousedown", (event) => {
+    isDrawing = true;
+    hidePreview();
+    const cc = toCanvasCoordinate(event.clientX, event.clientY);
+    const gc = toCartesianCoordinate(cc.x, cc.y);
+    if (currentTool === "brush") {
+        fillSquare(gc.x, gc.y, currentColor);
+        addToRecentColors(currentColor);
+    } else if (currentTool === "eraser") {
+        clearSquare(gc.x, gc.y);
     }
 });
+
+canvas.addEventListener("mouseup", (event) => {
+    isDrawing = false;
+    const cc = toCanvasCoordinate(event.clientX, event.clientY);
+    const gc = toCartesianCoordinate(cc.x, cc.y);
+    hoveredCell = gc;
+    showPreview(gc.x, gc.y);
+});
+
+canvas.addEventListener("mousemove", (event) => {
+    const cc = toCanvasCoordinate(event.clientX, event.clientY);
+    const gc = toCartesianCoordinate(cc.x, cc.y);
+
+    if (isDrawing) {
+        if (currentTool === "brush") fillSquare(gc.x, gc.y, currentColor);
+        else if (currentTool === "eraser") clearSquare(gc.x, gc.y);
+        return;
+    }
+
+    if (!hoveredCell || hoveredCell.x !== gc.x || hoveredCell.y !== gc.y) {
+        hidePreview();
+        hoveredCell = gc;
+        showPreview(gc.x, gc.y);
+    }
+});
+
+canvas.addEventListener("mouseleave", () => {
+    hidePreview();
+    hoveredCell = null;
+});
+
+/** 
+ * fin Ajout 3
+ */
+
 
 /**
  * Convertit la coordonnée (x, y) de la souris en coordonnées relatives au canvas.
@@ -202,12 +319,36 @@ function addTools() {
         // 3. Simule un clic sur le lien
         link.click();
     });
+
+    /**
+     * Ajout 4 - Haithem
+     */
+
+    const recentLabel = document.createElement("span");
+    recentLabel.textContent = "Récents :";
+    recentLabel.style.fontSize = "13px";
+    recentLabel.style.alignSelf = "center";
+
+    const recentContainer = document.createElement("div");
+    recentContainer.id = "recent-colors";
+    recentContainer.style.display = "flex";
+    recentContainer.style.gap = "5px";
+    recentContainer.style.alignItems = "center";
+
+    /**
+     * Fin Ajout 4
+     */
+
+
+
     // Ajout dans l'ordre : Pinceau → Palette → Gomme -> effacer tout --> 
     toolsDiv.appendChild(brushButton);
     toolsDiv.appendChild(colorPicker);
     toolsDiv.appendChild(eraserButton);
     toolsDiv.appendChild(clearButton);
     toolsDiv.appendChild(exportButton);
+    toolsDiv.appendChild(recentLabel);
+    toolsDiv.appendChild(recentContainer);
 }
 
     

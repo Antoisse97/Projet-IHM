@@ -3,8 +3,8 @@ const ctx = canvas.getContext("2d"); // Outil de dessin du canvas
 
 // Configuration
 const squareSize = 50; // Taille d'un pixel dans la représentation de la grille
-const rows = 10;
-const cols = 15;
+const rows = 14;
+const cols = 28;
 
 // Dimension du canva
 canvas.width = cols * squareSize;
@@ -116,7 +116,10 @@ function handleDrag(x, y) {
         fillSquare(coords.x, coords.y, currentColor);
     } else if (currentTool === "eraser") {
         clearSquare(coords.x, coords.y);
-    }
+    } else if (currentTool === "bucket") { // <-- NOUVEAU
+    console.log("Remplissage lancé sur la case :", coords.x, coords.y);
+    fillBucket(coords.x, coords.y, currentColor);
+}
 }
 
 /** 
@@ -202,6 +205,9 @@ canvas.addEventListener("mousedown", (event) => {
     } else if (currentTool === "eraser") {
         clearSquare(gc.x, gc.y);
     }
+    // On calcule les coordonnées et on lance l'outil immédiatement
+    const canvasCoords = toCanvasCoordinate(event.clientX, event.clientY);
+    handleDrag(canvasCoords.x, canvasCoords.y);
 });
 
 canvas.addEventListener("mouseup", (event) => {
@@ -226,6 +232,11 @@ canvas.addEventListener("mousemove", (event) => {
         hidePreview();
         hoveredCell = gc;
         showPreview(gc.x, gc.y);
+    }
+    // On ne dessine en continu que si on n'utilise PAS le pot de peinture
+    if (isDrawing && currentTool !== "bucket") {
+        const canvasCoords = toCanvasCoordinate(event.clientX, event.clientY);
+        handleDrag(canvasCoords.x, canvasCoords.y);
     }
 });
 
@@ -269,9 +280,52 @@ function clearAll() {
     drawCartesianGrid(squareSize, rows, cols);
 }
 
+// Lit la couleur du pixel au centre d'une case de la grille
+function getGridColor(x, y) {
+    const px = x * squareSize + (squareSize / 2);
+    const py = y * squareSize + (squareSize / 2);
+    const data = ctx.getImageData(px, py, 1, 1).data;
+    return data.join(','); // Retourne une chaîne "r,g,b,a"
+}
+
+// Algorithme de remplissage par diffusion (Breadth-First Search)
+function fillBucket(startX, startY, newColor) {
+    const targetColor = getGridColor(startX, startY);
+    const queue = [{ x: startX, y: startY }];
+    const visited = new Set();
+
+    while (queue.length > 0) {
+        const { x, y } = queue.shift();
+        const key = `${x},${y}`;
+
+        // Stop si hors limites ou déjà visité
+        if (x < 0 || x >= cols || y < 0 || y >= rows || visited.has(key)) continue;
+        visited.add(key);
+
+        // Si la case correspond à la couleur de la zone cliquée
+        if (getGridColor(x, y) === targetColor) {
+            fillSquare(x, y, newColor); 
+            
+            // Ajout des cases voisines à vérifier
+            queue.push({ x: x + 1, y });
+            queue.push({ x: x - 1, y });
+            queue.push({ x, y: y + 1 });
+            queue.push({ x, y: y - 1 });
+        }
+    }
+}
 
 function addTools() {
     const toolsDiv = document.getElementById("tools");
+
+  // Bouton Pot de peinture
+    const bucketBtn = document.createElement("button");
+    bucketBtn.textContent = "Pot de peinture";
+    bucketBtn.addEventListener("click",() => {
+        currentTool = "bucket";
+        console.log("Outil actuel : Pot de peinture");
+    })
+    
 
     // Bouton Pinceau
     const brushButton = document.createElement("button");
@@ -319,7 +373,7 @@ function addTools() {
         // 3. Simule un clic sur le lien
         link.click();
     });
-
+  
     /**
      * Ajout 4 - Haithem
      */
@@ -339,14 +393,13 @@ function addTools() {
      * Fin Ajout 4
      */
 
-
-
     // Ajout dans l'ordre : Pinceau → Palette → Gomme -> effacer tout --> 
     toolsDiv.appendChild(brushButton);
     toolsDiv.appendChild(colorPicker);
     toolsDiv.appendChild(eraserButton);
     toolsDiv.appendChild(clearButton);
     toolsDiv.appendChild(exportButton);
+    toolsDiv.appendChild(bucketBtn);
     toolsDiv.appendChild(recentLabel);
     toolsDiv.appendChild(recentContainer);
 }

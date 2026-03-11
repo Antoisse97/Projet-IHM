@@ -1,0 +1,91 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+.pixel-grid {
+    display: grid;
+    grid-template-columns: repeat(16, 20px);
+    gap: 1px;
+    background-color: #333;
+    padding: 10px;
+    border-radius: 5px;
+}
+
+.pixel {
+    width: 20px;
+    height: 20px;
+    background-color: #fff;
+    cursor: pointer;
+    border: 1px solid #ccc;
+    transition: background-color 0.1s;
+}
+
+.pixel:hover {
+    background-color: #e0e0e0;
+}
+
+.pixel.active {
+    background-color: #000;
+}
+
+/* Barre d'outils au-dessus du canvas */
+#tools {
+    padding: 10px;
+    background-color: #eee;
+    border-radius: 5px;
+    margin-bottom: 10px;
+}
+
+/* Boutons de la barre d'outils */
+#tools button {
+    margin-right: 10px;
+    padding: 5px 10px;
+    cursor: pointer;
+}
+
+/* Rendre le canvas visible */
+canvas {
+    border: 1px solid #000;
+    background-color: #fff;
+}
+
+/* Barre d'outils collée en haut */
+#tools {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    padding: 10px;
+    background-color: #eee;
+    border-radius: 0 0 4px 4px; /* coin arrondi seulement en bas */
+    margin-bottom: 20px;
+}
+
+/* Supprimer toute marge/padding du body en haut */
+body {
+    margin: 0;
+    padding: 10px; /* petit padding pour les côtés */
+}
+
+/* Canvas centré en dessous */
+canvas {
+    display: block;
+    margin: 0 auto;
+    border: 1px solid #333;
+}
+
+
+/* Style des boutons */
+#tools button {
+    padding: 5px 12px;
+    cursor: pointer;
+}
+
+#tools input[type="color"] {
+    width: 40px;
+    height: 40px;
+    border: none;
+    cursor: pointer;
+}
+

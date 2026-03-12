@@ -5,7 +5,7 @@ const ctx = canvas.getContext("2d"); // Outil de dessin du canvas
 const squareSize = 50; // Taille d'un pixel dans la représentation de la grille
 const rows = 14;
 const cols = 28;
-
+const undoStack = [];
 // Dimension du canva
 canvas.width = cols * squareSize;
 canvas.height = rows * squareSize;
@@ -195,6 +195,7 @@ function setActiveToolButton(activeId) {
  */
 // On commence à dessiner quand on appuie sur le bouton
 canvas.addEventListener("mousedown", (event) => {
+    saveState(); // <-- Ligne ajoutée : on sauvegarde avant de dessiner
     isDrawing = true;
     hidePreview();
     const cc = toCanvasCoordinate(event.clientX, event.clientY);
@@ -314,7 +315,21 @@ function fillBucket(startX, startY, newColor) {
         }
     }
 }
-
+// Fonction pour sauvegarder l'état actuel
+function saveState() {
+    // getImageData copie tous les pixels actuels du canvas
+    const currentState = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    undoStack.push(currentState);
+}
+// Fonction pour annuler la dernière action
+function undo() {
+    if (undoStack.length > 0) {
+        // pop() retire et renvoie le dernier élément du tableau
+        const lastState = undoStack.pop();
+        // putImageData remet ces pixels sur le canvas
+        ctx.putImageData(lastState, 0, 0);
+    }
+}
 function addTools() {
     const toolsDiv = document.getElementById("tools");
 
@@ -341,7 +356,7 @@ function addTools() {
     colorPicker.value = currentColor; // Couleur par défaut
     colorPicker.addEventListener("input", (event) => {
         currentColor = event.target.value;
-        console.log("Couleur sélectionnée :", currentColor);
+        console.log("Couleur selectionnee :", currentColor);
     });
 
     // Bouton Gomme
@@ -355,7 +370,10 @@ function addTools() {
     const clearButton = document.createElement("button");
     clearButton.textContent = "Tout effacer";
     clearButton.addEventListener("click", clearAll);
-    
+     // Bouton Annuler
+    const undoButton = document.createElement("button");
+    undoButton.textContent = "Annuler";
+    undoButton.addEventListener("click", undo);
     //bouton telecharger
     const exportButton = document.createElement("button");
     exportButton.textContent = "Telecharger l'image";
@@ -379,7 +397,7 @@ function addTools() {
      */
 
     const recentLabel = document.createElement("span");
-    recentLabel.textContent = "Récents :";
+    recentLabel.textContent = "Recents :";
     recentLabel.style.fontSize = "13px";
     recentLabel.style.alignSelf = "center";
 
@@ -402,6 +420,7 @@ function addTools() {
     toolsDiv.appendChild(bucketBtn);
     toolsDiv.appendChild(recentLabel);
     toolsDiv.appendChild(recentContainer);
+    toolsDiv.appendChild(undoButton);
 }
 
     
